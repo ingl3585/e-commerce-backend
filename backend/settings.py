@@ -11,23 +11,31 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from datetime import timedelta
+from distutils.log import debug
 from pathlib import Path
+
+import environ
+env = environ.Env()
+environ.Env.read_env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 import os
 
+# Take environment variables from .env file
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@s5x5ncc^agk-os45^f!s&!kbx5lk#jvpn&70wgoe4by@%2()w'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', 'https://tonysshop.herokuapp.com/']
 
 CORS_ALLOW_ALL_ORIGINS=True
 
@@ -43,6 +51,7 @@ INSTALLED_APPS = [
     'base.apps.BaseConfig',
     'rest_framework',
     'corsheaders',
+    'storages',
 ]
 
 REST_FRAMEWORK = {
@@ -85,6 +94,7 @@ SIMPLE_JWT = {
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.common.CommonMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -123,8 +133,12 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('NAME'),
+        'USER': env('USER'),
+        'PASSWORD': env('PASSWORD'),
+        'HOST': env('HOST'),
+        'PORT': '5432',
     }
 }
 
@@ -172,9 +186,24 @@ STATICFILES_DIRS = [
     BASE_DIR / 'e-commerce-frontend/build/static',
 ]
 
-MEDIA_ROOT = 'static/images'
+MEDIA_ROOT = BASE_DIR / 'static/images'
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AWS_QUERYSTRING_AUTH = False
+
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+AWS_S3_ACCESS_KEY_ID = env('AWS_S3_ACCESS_KEY_ID')
+
+AWS_S3_SECRET_ACCESS_KEY = env('AWS_S3_SECRET_ACCESS_KEY')
+
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+
+if os.getcwd() == '/app':
+    DEBUG = False
